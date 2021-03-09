@@ -1,0 +1,4 @@
+FROM supplantr/golang-toolbox
+
+# For building `go-rpi-rgb-led-matrix`
+RUN dnf install -y gcc-c++
