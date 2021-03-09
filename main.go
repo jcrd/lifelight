@@ -2,10 +2,12 @@ package main
 
 import (
     "image/color"
+    "log"
     "math/rand"
     "time"
 
     "github.com/jcrd/go-rpi-rgb-led-matrix"
+    "github.com/lucasb-eyer/go-colorful"
 )
 
 const (
@@ -14,6 +16,8 @@ const (
     hardwareMapping = "adafruit-hat"
 
     tick = time.Second / 6
+
+    fastColorGen = true
 )
 
 const (
@@ -28,10 +32,6 @@ const (
 
 var colorScheme = [CELL_N]color.Color{
     CELL_DEAD: color.Black,
-    CELL_LIVE_1: color.RGBA{255, 0, 0, 255},
-    CELL_LIVE_2: color.RGBA{0, 255, 0, 255},
-    CELL_LIVE_3: color.RGBA{0, 0, 255, 255},
-    CELL_LIVE_4: color.White,
 }
 
 type Universe struct {
@@ -40,6 +40,28 @@ type Universe struct {
     matrix rgbmatrix.Matrix
     canvas *rgbmatrix.Canvas
     ticker *time.Ticker
+}
+
+func genColors(fast bool) {
+    var colors []colorful.Color
+
+    log.Println("Generating color scheme...")
+
+regen:
+    if !fast {
+        var err error
+        colors, err = colorful.HappyPalette(CELL_N - 1)
+        if err != nil {
+            fast = true
+            goto regen
+        }
+    } else {
+        colors = colorful.FastHappyPalette(CELL_N - 1)
+    }
+
+    for i, c := range colors {
+        colorScheme[i + 1] = c
+    }
 }
 
 func applyRules(c, n int, cs [CELL_N]int) int {
@@ -142,6 +164,8 @@ func main() {
         ticker: time.NewTicker(tick),
     }
     defer u.close()
+
+    genColors(fastColorGen)
 
     u.randomize()
     u.run()
