@@ -110,8 +110,6 @@ func (u *Universe) getNeighbors(x, y int) (n int, cs [liveCellN]int) {
 }
 
 func (u *Universe) tick() {
-    defer u.canvas.Render()
-
     for x := 0; x < width; x++ {
         for y := 0; y < height; y++ {
             i := u.getIdx(x, y)
@@ -123,6 +121,7 @@ func (u *Universe) tick() {
     }
 
     u.cells = u.buffer
+    u.canvas.Render()
 }
 
 func (u *Universe) randomize() {
