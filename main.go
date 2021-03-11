@@ -30,6 +30,10 @@ const (
     CELL_N
 )
 
+const (
+    liveCellN = CELL_N - 1
+)
+
 var colorScheme = [CELL_N]color.Color{
     CELL_DEAD: color.Black,
 }
@@ -50,13 +54,13 @@ func genColors(fast bool) {
 regen:
     if !fast {
         var err error
-        colors, err = colorful.HappyPalette(CELL_N - 1)
+        colors, err = colorful.HappyPalette(liveCellN)
         if err != nil {
             fast = true
             goto regen
         }
     } else {
-        colors = colorful.FastHappyPalette(CELL_N - 1)
+        colors = colorful.FastHappyPalette(liveCellN)
     }
 
     for i, c := range colors {
@@ -64,13 +68,13 @@ regen:
     }
 }
 
-func applyRules(c, n int, cs [CELL_N]int) int {
+func applyRules(c, n int, cs [liveCellN]int) int {
     if n > 3 || n < 2 {
         return CELL_DEAD
     }
 
     if c == CELL_DEAD && n == 3 {
-        for s, i := range cs[1:] {
+        for s, i := range cs {
             s += 1
             if i > 1 {
                 return s
@@ -88,19 +92,18 @@ func (u *Universe) getIdx(x, y int) int {
     return y * width + x
 }
 
-func (u *Universe) getNeighbors(x, y int) (n int, cs [CELL_N]int) {
+func (u *Universe) getNeighbors(x, y int) (n int, cs [liveCellN]int) {
     for _, w := range []int{width - 1, 0, 1} {
         for _, h := range []int{height - 1, 0, 1} {
             if w == 0 && h == 0 {
                 continue
             }
             i := u.getIdx((x + w) % width, (y + h) % height)
-            cs[u.cells[i]] += 1
+            if c := u.cells[i]; c != CELL_DEAD {
+                n += 1
+                cs[c - 1] += 1
+            }
         }
-    }
-
-    for _, i := range cs[1:] {
-        n += i
     }
 
     return n, cs
@@ -127,7 +130,7 @@ func (u *Universe) randomize() {
         for y := 0; y < height; y++ {
             s := CELL_DEAD
             if rand.Intn(2) == 1 {
-                s = rand.Intn(CELL_N - 1) + 1
+                s = rand.Intn(liveCellN) + 1
             }
             u.cells[u.getIdx(x, y)] = s
         }
