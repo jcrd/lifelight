@@ -31,6 +31,7 @@ const (
 )
 
 const (
+    gridSize = width * height
     liveCellN = CELL_N - 1
 )
 
@@ -38,9 +39,11 @@ var colorScheme = [CELL_N]color.Color{
     CELL_DEAD: color.Black,
 }
 
+type Cells [gridSize]int
+
 type Universe struct {
-    cells [width * height]int
-    buffer [width * height]int
+    cells Cells
+    buffer Cells
     matrix rgbmatrix.Matrix
     canvas *rgbmatrix.Canvas
     ticker *time.Ticker
