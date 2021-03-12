@@ -15,7 +15,10 @@ const (
     height = 32
     hardwareMapping = "adafruit-hat"
 
-    tick = time.Second / 6
+    ticksPerSecond = 10
+
+    // Set to -1 to disable seeding of dead zones
+    seedFrequency = ticksPerSecond * 3
 
     fastColorGen = true
 )
@@ -47,6 +50,8 @@ type Universe struct {
     matrix rgbmatrix.Matrix
     canvas *rgbmatrix.Canvas
     ticker *time.Ticker
+    seedTick int
+    deadZones []int
 }
 
 func genColors(fast bool) {
@@ -91,36 +96,87 @@ func applyRules(c, n int, cs [liveCellN]int) int {
     return c
 }
 
+func randomCell() int {
+    if rand.Intn(2) == 1 {
+        return rand.Intn(liveCellN) + 1
+    }
+    return CELL_DEAD
+}
+
 func getIdx(x, y int) int {
     return y * width + x
 }
 
-func (u *Universe) getNeighbors(x, y int) (n int, cs [liveCellN]int) {
+func getCoords(idx int) (int, int) {
+    return idx % width, idx / width
+}
+
+func getNeighbors(idx int) (ns [8]int) {
+    x, y := getCoords(idx)
+    i := 0
+
     for _, w := range []int{width - 1, 0, 1} {
         for _, h := range []int{height - 1, 0, 1} {
             if w == 0 && h == 0 {
                 continue
             }
-            i := getIdx((x + w) % width, (y + h) % height)
-            if c := u.cells[i]; c != CELL_DEAD {
-                n += 1
-                cs[c - 1] += 1
-            }
+            ns[i] = getIdx((x + w) % width, (y + h) % height)
+            i++
+        }
+    }
+
+    return ns
+}
+
+func getContext(cells Cells, ns [8]int) (n int, cs [liveCellN]int) {
+    for _, i := range ns {
+        if c := cells[i]; c != CELL_DEAD {
+            n += 1
+            cs[c - 1] += 1
         }
     }
 
     return n, cs
 }
 
-func (u *Universe) tick() {
-    for x := 0; x < width; x++ {
-        for y := 0; y < height; y++ {
-            i := getIdx(x, y)
-            n, cs := u.getNeighbors(x, y)
-            c := applyRules(u.cells[i], n, cs)
-            u.buffer[i] = c
-            u.canvas.Set(x, y, colorScheme[c])
+func (u *Universe) seedDeadZones() {
+    u.deadZones = u.deadZones[:0]
+
+    for i := range u.buffer {
+        if u.buffer[i] != CELL_DEAD {
+            continue
         }
+        ns := getNeighbors(i)
+        if n, _ := getContext(u.buffer, ns); n == 0 {
+            u.deadZones = append(u.deadZones, i)
+        }
+    }
+
+    i := u.deadZones[rand.Intn(len(u.deadZones))]
+    u.buffer[i] = randomCell()
+
+    for _, n := range getNeighbors(i) {
+        u.buffer[n] = randomCell()
+    }
+}
+
+func (u *Universe) tick() {
+    for i := range u.buffer {
+        n, cs := getContext(u.cells, getNeighbors(i))
+        u.buffer[i] = applyRules(u.cells[i], n, cs)
+    }
+
+    if u.seedTick > 0 {
+        u.seedTick--
+    }
+    if u.seedTick == 0 {
+        u.seedDeadZones()
+        u.seedTick = seedFrequency
+    }
+
+    for i, c := range u.buffer {
+        x, y := getCoords(i)
+        u.canvas.Set(x, y, colorScheme[c])
     }
 
     u.cells = u.buffer
@@ -128,14 +184,8 @@ func (u *Universe) tick() {
 }
 
 func (u *Universe) randomize() {
-    for x := 0; x < width; x++ {
-        for y := 0; y < height; y++ {
-            s := CELL_DEAD
-            if rand.Intn(2) == 1 {
-                s = rand.Intn(liveCellN) + 1
-            }
-            u.cells[getIdx(x, y)] = s
-        }
+    for i := range u.cells {
+        u.cells[i] = randomCell()
     }
 }
 
@@ -166,7 +216,9 @@ func main() {
     u := &Universe{
         matrix: matrix,
         canvas: rgbmatrix.NewCanvas(matrix),
-        ticker: time.NewTicker(tick),
+        ticker: time.NewTicker(time.Second / ticksPerSecond),
+        seedTick: seedFrequency,
+        deadZones: make([]int, 0, gridSize),
     }
     defer u.close()
 
