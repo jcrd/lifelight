@@ -91,7 +91,7 @@ func applyRules(c, n int, cs [liveCellN]int) int {
     return c
 }
 
-func (u *Universe) getIdx(x, y int) int {
+func getIdx(x, y int) int {
     return y * width + x
 }
 
@@ -101,7 +101,7 @@ func (u *Universe) getNeighbors(x, y int) (n int, cs [liveCellN]int) {
             if w == 0 && h == 0 {
                 continue
             }
-            i := u.getIdx((x + w) % width, (y + h) % height)
+            i := getIdx((x + w) % width, (y + h) % height)
             if c := u.cells[i]; c != CELL_DEAD {
                 n += 1
                 cs[c - 1] += 1
@@ -115,7 +115,7 @@ func (u *Universe) getNeighbors(x, y int) (n int, cs [liveCellN]int) {
 func (u *Universe) tick() {
     for x := 0; x < width; x++ {
         for y := 0; y < height; y++ {
-            i := u.getIdx(x, y)
+            i := getIdx(x, y)
             n, cs := u.getNeighbors(x, y)
             c := applyRules(u.cells[i], n, cs)
             u.buffer[i] = c
@@ -134,7 +134,7 @@ func (u *Universe) randomize() {
             if rand.Intn(2) == 1 {
                 s = rand.Intn(liveCellN) + 1
             }
-            u.cells[u.getIdx(x, y)] = s
+            u.cells[getIdx(x, y)] = s
         }
     }
 }
