@@ -1,6 +1,6 @@
 # lifelight
 
-lifelight runs Conway's Game of Life on a Raspberry Pi connected to a 32x32
+lifelight runs Conway's Game of Life on a Raspberry Pi connected to an
 LED matrix.
 
 ## License
