@@ -44,7 +44,7 @@ var colorScheme = [CELL_N]color.Color{
 
 type Cells [gridSize]int
 
-type Universe struct {
+type Env struct {
     cells Cells
     buffer Cells
     matrix rgbmatrix.Matrix
@@ -139,65 +139,65 @@ func getContext(cells Cells, ns [8]int) (n int, cs [liveCellN]int) {
     return n, cs
 }
 
-func (u *Universe) seedDeadZones() {
-    u.deadZones = u.deadZones[:0]
+func (e *Env) seedDeadZones() {
+    e.deadZones = e.deadZones[:0]
 
-    for i := range u.buffer {
-        if u.buffer[i] != CELL_DEAD {
+    for i := range e.buffer {
+        if e.buffer[i] != CELL_DEAD {
             continue
         }
         ns := getNeighbors(i)
-        if n, _ := getContext(u.buffer, ns); n == 0 {
-            u.deadZones = append(u.deadZones, i)
+        if n, _ := getContext(e.buffer, ns); n == 0 {
+            e.deadZones = append(e.deadZones, i)
         }
     }
 
-    i := u.deadZones[rand.Intn(len(u.deadZones))]
-    u.buffer[i] = randomCell()
+    i := e.deadZones[rand.Intn(len(e.deadZones))]
+    e.buffer[i] = randomCell()
 
     for _, n := range getNeighbors(i) {
-        u.buffer[n] = randomCell()
+        e.buffer[n] = randomCell()
     }
 }
 
-func (u *Universe) tick() {
-    for i := range u.buffer {
-        n, cs := getContext(u.cells, getNeighbors(i))
-        u.buffer[i] = applyRules(u.cells[i], n, cs)
+func (e *Env) tick() {
+    for i := range e.buffer {
+        n, cs := getContext(e.cells, getNeighbors(i))
+        e.buffer[i] = applyRules(e.cells[i], n, cs)
     }
 
-    if u.seedTick > 0 {
-        u.seedTick--
+    if e.seedTick > 0 {
+        e.seedTick--
     }
-    if u.seedTick == 0 {
-        u.seedDeadZones()
-        u.seedTick = seedFrequency
+    if e.seedTick == 0 {
+        e.seedDeadZones()
+        e.seedTick = seedFrequency
     }
 
-    for i, c := range u.buffer {
+    for i, c := range e.buffer {
         x, y := getCoords(i)
-        u.canvas.Set(x, y, colorScheme[c])
+        e.canvas.Set(x, y, colorScheme[c])
     }
 
-    u.cells = u.buffer
-    u.canvas.Render()
+    e.cells = e.buffer
+    e.canvas.Render()
 }
 
-func (u *Universe) randomize() {
-    for i := range u.cells {
-        u.cells[i] = randomCell()
-    }
-}
-
-func (u *Universe) run() {
-    for range u.ticker.C {
-        u.tick()
+func (e *Env) randomize() {
+    for i := range e.cells {
+        e.cells[i] = randomCell()
     }
 }
 
-func (u *Universe) close() {
-    u.ticker.Stop()
-    u.canvas.Close()
+func (e *Env) run() {
+    for range e.ticker.C {
+        e.tick()
+    }
+}
+
+func (e *Env) close() {
+    e.ticker.Stop()
+    e.canvas.Close()
 }
 
 func main() {
@@ -213,17 +213,17 @@ func main() {
 
     rand.Seed(time.Now().UnixNano())
 
-    u := &Universe{
+    e := &Env{
         matrix: matrix,
         canvas: rgbmatrix.NewCanvas(matrix),
         ticker: time.NewTicker(time.Second / ticksPerSecond),
         seedTick: seedFrequency,
         deadZones: make([]int, 0, gridSize),
     }
-    defer u.close()
+    defer e.close()
 
     genColors(fastColorGen)
 
-    u.randomize()
-    u.run()
+    e.randomize()
+    e.run()
 }
