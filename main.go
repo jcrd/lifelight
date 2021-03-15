@@ -54,6 +54,26 @@ type Env struct {
     deadZones []int
 }
 
+func newEnv() *Env {
+    config := rgbmatrix.DefaultConfig
+    config.Cols = width
+    config.Rows = height
+    config.HardwareMapping = hardwareMapping
+
+    matrix, err := rgbmatrix.NewRGBLedMatrix(&config)
+    if err != nil {
+        panic(err)
+    }
+
+    return &Env{
+        matrix: matrix,
+        canvas: rgbmatrix.NewCanvas(matrix),
+        ticker: time.NewTicker(time.Second / ticksPerSecond),
+        seedTick: seedFrequency,
+        deadZones: make([]int, 0, gridSize),
+    }
+}
+
 func genColors(fast bool) {
     var colors []colorful.Color
 
@@ -201,27 +221,10 @@ func (e *Env) close() {
 }
 
 func main() {
-    config := rgbmatrix.DefaultConfig
-    config.Cols = width
-    config.Rows = height
-    config.HardwareMapping = hardwareMapping
-
-    matrix, err := rgbmatrix.NewRGBLedMatrix(&config)
-    if err != nil {
-        panic(err)
-    }
-
-    rand.Seed(time.Now().UnixNano())
-
-    e := &Env{
-        matrix: matrix,
-        canvas: rgbmatrix.NewCanvas(matrix),
-        ticker: time.NewTicker(time.Second / ticksPerSecond),
-        seedTick: seedFrequency,
-        deadZones: make([]int, 0, gridSize),
-    }
+    e := newEnv()
     defer e.close()
 
+    rand.Seed(time.Now().UnixNano())
     genColors(fastColorGen)
 
     e.randomize()
