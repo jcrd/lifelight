@@ -11,8 +11,8 @@ import (
 )
 
 const (
-    width = 32
-    height = 32
+    matrixWidth = 32
+    matrixHeight = 32
     hardwareMapping = "adafruit-hat"
 
     ticksPerSecond = 10
@@ -34,7 +34,6 @@ const (
 )
 
 const (
-    gridSize = width * height
     liveCellN = CELL_N - 1
 )
 
@@ -42,28 +41,32 @@ var colorScheme = [CELL_N]color.Color{
     CELL_DEAD: color.Black,
 }
 
-type Cells [gridSize]int
+type Cells []int
 
 type Env struct {
     cells Cells
     buffer Cells
+    deadZones Cells
     ticker *time.Ticker
     seedTick int
-    deadZones []int
 }
 
 func newEnv() *Env {
+    size := matrixWidth * matrixHeight
+
     return &Env{
+        cells: make(Cells, size),
+        buffer: make(Cells, size),
+        deadZones: make(Cells, 0, size),
         ticker: time.NewTicker(time.Second / ticksPerSecond),
         seedTick: seedFrequency,
-        deadZones: make([]int, 0, gridSize),
     }
 }
 
 func newCanvas() *rgbmatrix.Canvas {
     config := rgbmatrix.DefaultConfig
-    config.Cols = width
-    config.Rows = height
+    config.Cols = matrixWidth
+    config.Rows = matrixHeight
     config.HardwareMapping = hardwareMapping
 
     matrix, err := rgbmatrix.NewRGBLedMatrix(&config)
@@ -123,16 +126,16 @@ func randomCell() int {
     return CELL_DEAD
 }
 
-func getIdx(x, y int) int {
+func getIdx(x, y, width int) int {
     return y * width + x
 }
 
-func getCoords(idx int) (int, int) {
+func getCoords(idx, width int) (int, int) {
     return idx % width, idx / width
 }
 
-func getNeighbors(idx int) (ns [8]int) {
-    x, y := getCoords(idx)
+func getNeighbors(idx, width, height int) (ns [8]int) {
+    x, y := getCoords(idx, width)
     i := 0
 
     for _, w := range []int{width - 1, 0, 1} {
@@ -140,7 +143,7 @@ func getNeighbors(idx int) (ns [8]int) {
             if w == 0 && h == 0 {
                 continue
             }
-            ns[i] = getIdx((x + w) % width, (y + h) % height)
+            ns[i] = getIdx((x + w) % width, (y + h) % height, width)
             i++
         }
     }
@@ -166,7 +169,7 @@ func (e *Env) seedDeadZones() {
         if e.buffer[i] != CELL_DEAD {
             continue
         }
-        ns := getNeighbors(i)
+        ns := getNeighbors(i, matrixWidth, matrixHeight)
         if n, _ := getContext(e.buffer, ns); n == 0 {
             e.deadZones = append(e.deadZones, i)
         }
@@ -175,14 +178,14 @@ func (e *Env) seedDeadZones() {
     i := e.deadZones[rand.Intn(len(e.deadZones))]
     e.buffer[i] = randomCell()
 
-    for _, n := range getNeighbors(i) {
+    for _, n := range getNeighbors(i, matrixWidth, matrixHeight) {
         e.buffer[n] = randomCell()
     }
 }
 
 func (e *Env) tick() Cells {
     for i := range e.buffer {
-        n, cs := getContext(e.cells, getNeighbors(i))
+        n, cs := getContext(e.cells, getNeighbors(i, matrixWidth, matrixHeight))
         e.buffer[i] = applyRules(e.cells[i], n, cs)
     }
 
@@ -194,7 +197,8 @@ func (e *Env) tick() Cells {
         e.seedTick = seedFrequency
     }
 
-    e.cells = e.buffer
+    copy(e.cells, e.buffer)
+
     return e.cells
 }
 
@@ -207,7 +211,7 @@ func (e *Env) randomize() {
 func (e *Env) run(canvas *rgbmatrix.Canvas) {
     for range e.ticker.C {
         for i, c := range e.tick() {
-            x, y := getCoords(i)
+            x, y := getCoords(i, matrixWidth)
             canvas.Set(x, y, colorScheme[c])
         }
         canvas.Render()
