@@ -47,14 +47,20 @@ type Cells [gridSize]int
 type Env struct {
     cells Cells
     buffer Cells
-    matrix rgbmatrix.Matrix
-    canvas *rgbmatrix.Canvas
     ticker *time.Ticker
     seedTick int
     deadZones []int
 }
 
 func newEnv() *Env {
+    return &Env{
+        ticker: time.NewTicker(time.Second / ticksPerSecond),
+        seedTick: seedFrequency,
+        deadZones: make([]int, 0, gridSize),
+    }
+}
+
+func newCanvas() *rgbmatrix.Canvas {
     config := rgbmatrix.DefaultConfig
     config.Cols = width
     config.Rows = height
@@ -65,13 +71,7 @@ func newEnv() *Env {
         panic(err)
     }
 
-    return &Env{
-        matrix: matrix,
-        canvas: rgbmatrix.NewCanvas(matrix),
-        ticker: time.NewTicker(time.Second / ticksPerSecond),
-        seedTick: seedFrequency,
-        deadZones: make([]int, 0, gridSize),
-    }
+    return rgbmatrix.NewCanvas(matrix)
 }
 
 func genColors(fast bool) {
@@ -180,7 +180,7 @@ func (e *Env) seedDeadZones() {
     }
 }
 
-func (e *Env) tick() {
+func (e *Env) tick() Cells {
     for i := range e.buffer {
         n, cs := getContext(e.cells, getNeighbors(i))
         e.buffer[i] = applyRules(e.cells[i], n, cs)
@@ -194,13 +194,8 @@ func (e *Env) tick() {
         e.seedTick = seedFrequency
     }
 
-    for i, c := range e.buffer {
-        x, y := getCoords(i)
-        e.canvas.Set(x, y, colorScheme[c])
-    }
-
     e.cells = e.buffer
-    e.canvas.Render()
+    return e.cells
 }
 
 func (e *Env) randomize() {
@@ -209,18 +204,24 @@ func (e *Env) randomize() {
     }
 }
 
-func (e *Env) run() {
+func (e *Env) run(canvas *rgbmatrix.Canvas) {
     for range e.ticker.C {
-        e.tick()
+        for i, c := range e.tick() {
+            x, y := getCoords(i)
+            canvas.Set(x, y, colorScheme[c])
+        }
+        canvas.Render()
     }
 }
 
 func (e *Env) close() {
     e.ticker.Stop()
-    e.canvas.Close()
 }
 
 func main() {
+    canvas := newCanvas()
+    defer canvas.Close()
+
     e := newEnv()
     defer e.close()
 
@@ -228,5 +229,5 @@ func main() {
     genColors(fastColorGen)
 
     e.randomize()
-    e.run()
+    e.run(canvas)
 }
