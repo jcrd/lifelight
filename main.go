@@ -150,8 +150,8 @@ func getNeighbors(idx, width, height int) (ns Neighbors) {
     x, y := getCoords(idx, width)
     i := 0
 
-    for _, w := range []int{width - 1, 0, 1} {
-        for _, h := range []int{height - 1, 0, 1} {
+    for _, w := range [...]int{width - 1, 0, 1} {
+        for _, h := range [...]int{height - 1, 0, 1} {
             if w == 0 && h == 0 {
                 continue
             }

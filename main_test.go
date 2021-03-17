@@ -68,7 +68,7 @@ func TestGetContext(t *testing.T) {
         t.Errorf("n = %d; want 5", n)
     }
 
-    for i, v := range []int{2, 1, 2, 0} {
+    for i, v := range [...]int{2, 1, 2, 0} {
         if cs[i] != v {
             t.Errorf("count = %d; want %d", cs[i], v)
         }
