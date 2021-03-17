@@ -1,0 +1,6 @@
+github.com/go-ini/ini v1.62.0 h1:7VJT/ZXjzqSrvtraFp4ONq80hTcRQth1c9ZnQ3uNQvU=
+github.com/go-ini/ini v1.62.0/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
+github.com/jcrd/go-rpi-rgb-led-matrix v0.0.0-20210318012446-5677665faf0a h1:959zVfpoh0GEywP2xhiIYNiOGzYhz2DJpfSkETczQw4=
+github.com/jcrd/go-rpi-rgb-led-matrix v0.0.0-20210318012446-5677665faf0a/go.mod h1:DJkkAa3I5MqglRpfq0fh9CEN7129ZnjlC/fboLa/XPE=
+github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
+github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
