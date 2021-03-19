@@ -191,6 +191,10 @@ func (e *Env) seedDeadZones() {
         }
     }
 
+    if len(e.deadZones) == 0 {
+        return
+    }
+
     i := e.deadZones[rand.Intn(len(e.deadZones))]
     e.buffer[i] = randomCell()
 
