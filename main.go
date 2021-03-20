@@ -40,7 +40,10 @@ type Hardware struct {
 
 type Config struct {
     TicksPerSecond int
-    SeedFrequency int
+    SeedThreshold float32
+    SeedThresholdDecay float32
+    SeedThresholdDecayTicks int
+    SeedCooldownTicks int
     FastColorGen bool
 
     Hardware
@@ -55,9 +58,12 @@ type Env struct {
     deadZones Cells
     width int
     height int
+    size int
     ticker *time.Ticker
-    seedTick int
-    seedFrequency int
+    seedThreshold float32
+    seedThresholdDecayTicks int
+    seedCooldownTicks int
+    config Config
 }
 
 func debugLog(fmt string, v ...interface{}) {
@@ -76,9 +82,12 @@ func newEnv(c Config) *Env {
         deadZones: make(Cells, 0, size),
         width: c.Hardware.MatrixWidth,
         height: c.Hardware.MatrixHeight,
+        size: size,
         ticker: time.NewTicker(ticks),
-        seedTick: c.SeedFrequency,
-        seedFrequency: c.SeedFrequency,
+        seedThreshold: c.SeedThreshold,
+        seedThresholdDecayTicks: 0,
+        seedCooldownTicks: 0,
+        config: c,
     }
 }
 
@@ -185,7 +194,7 @@ func (e *Env) getNeighbors(idx int) Neighbors {
     return getNeighbors(idx, e.width, e.height)
 }
 
-func (e *Env) seedDeadZones() {
+func (e *Env) updateDeadZones() int {
     e.deadZones = e.deadZones[:0]
 
     for i := range e.buffer {
@@ -198,10 +207,10 @@ func (e *Env) seedDeadZones() {
         }
     }
 
-    if len(e.deadZones) == 0 {
-        return
-    }
+    return len(e.deadZones)
+}
 
+func (e *Env) seedDeadZones() {
     i := e.deadZones[rand.Intn(len(e.deadZones))]
     e.buffer[i] = randomCell()
 
@@ -210,20 +219,43 @@ func (e *Env) seedDeadZones() {
     }
 }
 
+func (e *Env) seed() {
+    if e.seedCooldownTicks > 0 {
+        e.seedCooldownTicks--
+        debugLog("seed: cooldown = %d\n", e.seedCooldownTicks)
+        return
+    }
+
+    z := e.updateDeadZones()
+    if z == 0 {
+        return
+    }
+
+    t := float32(z) / float32(e.size)
+    c := e.config
+
+    if t >= e.seedThreshold || e.seedThreshold < c.SeedThresholdDecay {
+        debugLog("seed: deadzones = %f; seeding...\n", t)
+        e.seedDeadZones()
+        e.seedThreshold = c.SeedThreshold
+        e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
+        e.seedCooldownTicks = c.SeedCooldownTicks
+    } else if e.seedThresholdDecayTicks > 0 {
+        e.seedThresholdDecayTicks--
+        debugLog("seed: decay = %d\n", e.seedThresholdDecayTicks)
+    } else {
+        e.seedThreshold -= e.config.SeedThresholdDecay
+        e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
+        debugLog("seed: threshold = %f\n", e.seedThreshold)
+    }
+}
+
 func (e *Env) tick() Cells {
     for i := range e.buffer {
         n, cs := getContext(e.cells, e.getNeighbors(i))
         e.buffer[i] = applyRules(e.cells[i], n, cs)
     }
-
-    if e.seedTick > 0 {
-        e.seedTick--
-    }
-    if e.seedTick == 0 {
-        e.seedDeadZones()
-        e.seedTick = e.seedFrequency
-    }
-
+    e.seed()
     copy(e.cells, e.buffer)
 
     return e.cells
@@ -260,7 +292,10 @@ func getDebug() bool {
 func loadConfig() (c Config) {
     c = Config{
         TicksPerSecond: 10,
-        SeedFrequency: 30,
+        SeedThreshold: 0.5,
+        SeedThresholdDecay: 0.05,
+        SeedThresholdDecayTicks: 5,
+        SeedCooldownTicks: 2,
         FastColorGen: true,
         Hardware: Hardware{
             MatrixWidth: 32,
