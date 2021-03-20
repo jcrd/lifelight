@@ -30,6 +30,7 @@ const (
 var colorScheme = [CELL_N]color.Color{
     CELL_DEAD: color.Black,
 }
+var debug bool
 
 type Hardware struct {
     MatrixWidth int
@@ -57,6 +58,12 @@ type Env struct {
     ticker *time.Ticker
     seedTick int
     seedFrequency int
+}
+
+func debugLog(fmt string, v ...interface{}) {
+    if debug {
+        log.Printf(fmt, v...)
+    }
 }
 
 func newEnv(c Config) *Env {
@@ -92,7 +99,7 @@ func newCanvas(c Config) *rgbmatrix.Canvas {
 func genColors(fast bool) {
     var colors []colorful.Color
 
-    log.Println("Generating color scheme...")
+    debugLog("Generating color scheme...\n")
 
 regen:
     if !fast {
@@ -242,6 +249,14 @@ func (e *Env) close() {
     e.ticker.Stop()
 }
 
+func getDebug() bool {
+    _, ok := os.LookupEnv("LIFELIGHT_DEBUG")
+    if ok {
+        log.Println("Debug logging enabled")
+    }
+    return ok
+}
+
 func loadConfig() (c Config) {
     c = Config{
         TicksPerSecond: 10,
@@ -263,7 +278,7 @@ func loadConfig() (c Config) {
         return c
     }
 
-    log.Println("Loading config file...")
+    debugLog("Loading config file...\n")
 
     if err := ini.MapTo(&c, path); err != nil {
         log.Printf("Failed to load config file %s: %v\n", path, err)
@@ -273,6 +288,7 @@ func loadConfig() (c Config) {
 }
 
 func main() {
+    debug = getDebug()
     c := loadConfig()
 
     canvas := newCanvas(c)
