@@ -305,11 +305,15 @@ func loadConfig() (c Config) {
     }
 
     path := configPath
-    if v := os.Getenv("LIFELIGHT_CONFIG"); v != "" {
+    v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG")
+    if hasEnv {
         path = v
     }
 
     if _, err := os.Stat(path); err != nil {
+        if hasEnv {
+            log.Printf("%v\n", err)
+        }
         return c
     }
 
