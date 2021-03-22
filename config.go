@@ -1,6 +1,7 @@
 package main
 
 import (
+    "errors"
     "fmt"
     "log"
     "os"
@@ -11,6 +12,13 @@ import (
 )
 
 const configPath = "/etc/lifelight.ini"
+
+var hardwareMappings = []string{
+    "regular",
+    "adafruit-hat",
+    "adafruit-hat-pwm",
+    "compute-module",
+}
 
 type Time struct {
     state bool
@@ -153,7 +161,7 @@ sections:
     }
 }
 
-func (c *Config) load() {
+func (c *Config) load() error {
     path := configPath
     v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG")
     if hasEnv {
@@ -162,25 +170,67 @@ func (c *Config) load() {
 
     if _, err := os.Stat(path); err != nil {
         if hasEnv {
-            log.Printf("%v\n", err)
+            return err
         }
-        return
+        return nil
     }
 
     debugLog("Loading config file...\n")
 
     f, err := ini.Load(path)
     if err != nil {
-        log.Printf("%v\n", err)
-        return
+        return err
     }
 
     if err = f.MapTo(c); err != nil {
-        log.Printf("config: Failed to parse file '%s': %v\n", path, err)
-        return
+        e := fmt.Sprintf("Failed to parse file '%s': %v", path, err)
+        return errors.New(e)
+    }
+
+    if c.TicksPerSecond < 1 {
+        e := fmt.Sprintf("TicksPerSecond = %d; must be > 0",
+            c.TicksPerSecond)
+        return errors.New(e)
+    }
+    if c.SeedThreshold > 1.0 || c.SeedThreshold < 0.0 {
+        e := fmt.Sprintf("SeedThreshold = %f; must be in range [0.0, 1.0]",
+            c.SeedThreshold)
+        return errors.New(e)
+    }
+    if c.SeedThresholdDecay < 0.0 {
+        e := fmt.Sprintf("SeedThresholdDecay = %f; must be positive",
+            c.SeedThresholdDecay)
+        return errors.New(e)
+    }
+    if c.SeedThresholdDecayTicks < 0 {
+        e := fmt.Sprintf("SeedThresholdDecayTicks = %d; must be positive",
+            c.SeedThresholdDecayTicks)
+        return errors.New(e)
+    }
+    if c.SeedCooldownTicks < 0 {
+        e := fmt.Sprintf("SeedCooldownTicks = %d; must be positive",
+            c.SeedCooldownTicks)
+        return errors.New(e)
+    }
+    if c.Hardware.MatrixWidth < 1 {
+        e := fmt.Sprintf("Hardware.MatrixWidth = %d; must be > 0",
+            c.Hardware.MatrixWidth)
+        return errors.New(e)
+    }
+    if c.Hardware.MatrixHeight < 1 {
+        e := fmt.Sprintf("Hardware.MatrixHeight = %d; must be > 0",
+            c.Hardware.MatrixHeight)
+        return errors.New(e)
+    }
+    if !contains(hardwareMappings, c.Hardware.Mapping) {
+        e := fmt.Sprintf("Hardware.Mapping = %s; must be one of: %s",
+            c.Hardware.Mapping, strings.Join(hardwareMappings, ", "))
+        return errors.New(e)
     }
 
     c.loadSchedules(f)
+
+    return nil
 }
 
 func (c *Config) getScheduleState(nd string, nt string, state bool) bool {

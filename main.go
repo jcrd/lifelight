@@ -273,7 +273,10 @@ func main() {
     debug = getDebug()
 
     c := newConfig()
-    c.load()
+    if err := c.load(); err != nil {
+        log.Printf("config: %v\n", err)
+        return
+    }
 
     canvas := newCanvas(c)
     defer canvas.Close()
