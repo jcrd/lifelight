@@ -7,7 +7,6 @@ import (
     "os"
     "time"
 
-    "github.com/go-ini/ini"
     "github.com/jcrd/go-rpi-rgb-led-matrix"
     "github.com/lucasb-eyer/go-colorful"
 )
@@ -22,32 +21,12 @@ const (
     CELL_N
 )
 
-const (
-    configPath = "/etc/lifelight.ini"
-    liveCellN = CELL_N - 1
-)
+const liveCellN = CELL_N - 1
 
 var colorScheme = [CELL_N]color.Color{
     CELL_DEAD: color.Black,
 }
 var debug bool
-
-type Hardware struct {
-    MatrixWidth int
-    MatrixHeight int
-    Mapping string
-}
-
-type Config struct {
-    TicksPerSecond int
-    SeedThreshold float32
-    SeedThresholdDecay float32
-    SeedThresholdDecayTicks int
-    SeedCooldownTicks int
-    FastColorGen bool
-
-    Hardware
-}
 
 type Cells []int
 type Neighbors [8]int
@@ -287,43 +266,6 @@ func getDebug() bool {
         log.Println("Debug logging enabled")
     }
     return ok
-}
-
-func loadConfig() (c Config) {
-    c = Config{
-        TicksPerSecond: 10,
-        SeedThreshold: 0.5,
-        SeedThresholdDecay: 0.05,
-        SeedThresholdDecayTicks: 5,
-        SeedCooldownTicks: 2,
-        FastColorGen: true,
-        Hardware: Hardware{
-            MatrixWidth: 32,
-            MatrixHeight: 32,
-            Mapping: "adafruit-hat",
-        },
-    }
-
-    path := configPath
-    v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG")
-    if hasEnv {
-        path = v
-    }
-
-    if _, err := os.Stat(path); err != nil {
-        if hasEnv {
-            log.Printf("%v\n", err)
-        }
-        return c
-    }
-
-    debugLog("Loading config file...\n")
-
-    if err := ini.MapTo(&c, path); err != nil {
-        log.Printf("Failed to load config file %s: %v\n", path, err)
-    }
-
-    return c
 }
 
 func main() {
