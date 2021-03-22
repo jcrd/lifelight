@@ -5,6 +5,7 @@ import (
     "log"
     "math/rand"
     "os"
+    "strings"
     "time"
 
     "github.com/jcrd/go-rpi-rgb-led-matrix"
@@ -38,11 +39,10 @@ type Env struct {
     width int
     height int
     size int
-    ticker *time.Ticker
     seedThreshold float32
     seedThresholdDecayTicks int
     seedCooldownTicks int
-    config Config
+    config *Config
 }
 
 func debugLog(fmt string, v ...interface{}) {
@@ -51,8 +51,15 @@ func debugLog(fmt string, v ...interface{}) {
     }
 }
 
-func newEnv(c Config) *Env {
-    ticks := time.Second / time.Duration(c.TicksPerSecond)
+func getDebug() bool {
+    _, ok := os.LookupEnv("LIFELIGHT_DEBUG")
+    if ok {
+        log.Println("Debug logging enabled")
+    }
+    return ok
+}
+
+func newEnv(c *Config) *Env {
     size := c.Hardware.MatrixWidth * c.Hardware.MatrixHeight
 
     return &Env{
@@ -62,7 +69,6 @@ func newEnv(c Config) *Env {
         width: c.Hardware.MatrixWidth,
         height: c.Hardware.MatrixHeight,
         size: size,
-        ticker: time.NewTicker(ticks),
         seedThreshold: c.SeedThreshold,
         seedThresholdDecayTicks: 0,
         seedCooldownTicks: 0,
@@ -70,7 +76,7 @@ func newEnv(c Config) *Env {
     }
 }
 
-func newCanvas(c Config) *rgbmatrix.Canvas {
+func newCanvas(c *Config) *rgbmatrix.Canvas {
     config := rgbmatrix.DefaultConfig
     config.Cols = c.Hardware.MatrixWidth
     config.Rows = c.Hardware.MatrixHeight
@@ -246,41 +252,59 @@ func (e *Env) randomize() {
     }
 }
 
-func (e *Env) run(canvas *rgbmatrix.Canvas) {
-    for range e.ticker.C {
-        for i, c := range e.tick() {
-            x, y := getCoords(i, e.width)
-            canvas.Set(x, y, colorScheme[c])
+func (e *Env) update(canvas *rgbmatrix.Canvas) {
+    for i, c := range e.tick() {
+        x, y := getCoords(i, e.width)
+        canvas.Set(x, y, colorScheme[c])
+    }
+    canvas.Render()
+}
+
+func (e *Env) clear(canvas *rgbmatrix.Canvas) {
+    for x := 0; x < e.width; x++ {
+        for y := 0; y < e.height; y++ {
+            canvas.Set(x, y, color.Black)
         }
-        canvas.Render()
     }
-}
-
-func (e *Env) close() {
-    e.ticker.Stop()
-}
-
-func getDebug() bool {
-    _, ok := os.LookupEnv("LIFELIGHT_DEBUG")
-    if ok {
-        log.Println("Debug logging enabled")
-    }
-    return ok
+    canvas.Render()
 }
 
 func main() {
     debug = getDebug()
-    c := loadConfig()
+
+    c := newConfig()
+    c.load()
 
     canvas := newCanvas(c)
     defer canvas.Close()
 
-    e := newEnv(c)
-    defer e.close()
-
     rand.Seed(time.Now().UnixNano())
     genColors(c.FastColorGen)
 
+    e := newEnv(c)
     e.randomize()
-    e.run(canvas)
+
+    ticks := time.Second / time.Duration(c.TicksPerSecond)
+    state := true
+    toggle := make(chan struct{})
+
+    go func() {
+        for range time.Tick(time.Second * 30) {
+            t := strings.Fields(time.Now().Format("Mon 15:04"))
+            if s := c.getScheduleState(t[0], t[1], state); s != state {
+                state = s
+                toggle <- struct{}{}
+            }
+        }
+    }()
+
+    for range time.Tick(ticks) {
+        select {
+        case <-toggle:
+            e.clear(canvas)
+            <-toggle
+        default:
+            e.update(canvas)
+        }
+    }
 }
