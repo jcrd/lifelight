@@ -1,7 +1,6 @@
 package main
 
 import (
-    "errors"
     "fmt"
     "log"
     "os"
@@ -183,49 +182,40 @@ func (c *Config) load() error {
     }
 
     if err = f.MapTo(c); err != nil {
-        e := fmt.Sprintf("Failed to parse file '%s': %v", path, err)
-        return errors.New(e)
+        return fmt.Errorf("Failed to parse file '%s': %v", path, err)
     }
 
     if c.TicksPerSecond < 1 {
-        e := fmt.Sprintf("TicksPerSecond = %d; must be > 0",
+        return fmt.Errorf("TicksPerSecond = %d; must be > 0",
             c.TicksPerSecond)
-        return errors.New(e)
     }
     if c.SeedThreshold > 1.0 || c.SeedThreshold < 0.0 {
-        e := fmt.Sprintf("SeedThreshold = %f; must be in range [0.0, 1.0]",
+        return fmt.Errorf("SeedThreshold = %f; must be in range [0.0, 1.0]",
             c.SeedThreshold)
-        return errors.New(e)
     }
     if c.SeedThresholdDecay < 0.0 {
-        e := fmt.Sprintf("SeedThresholdDecay = %f; must be positive",
+        return fmt.Errorf("SeedThresholdDecay = %f; must be positive",
             c.SeedThresholdDecay)
-        return errors.New(e)
     }
     if c.SeedThresholdDecayTicks < 0 {
-        e := fmt.Sprintf("SeedThresholdDecayTicks = %d; must be positive",
+        return fmt.Errorf("SeedThresholdDecayTicks = %d; must be positive",
             c.SeedThresholdDecayTicks)
-        return errors.New(e)
     }
     if c.SeedCooldownTicks < 0 {
-        e := fmt.Sprintf("SeedCooldownTicks = %d; must be positive",
+        return fmt.Errorf("SeedCooldownTicks = %d; must be positive",
             c.SeedCooldownTicks)
-        return errors.New(e)
     }
     if c.Hardware.MatrixWidth < 1 {
-        e := fmt.Sprintf("Hardware.MatrixWidth = %d; must be > 0",
+        return fmt.Errorf("Hardware.MatrixWidth = %d; must be > 0",
             c.Hardware.MatrixWidth)
-        return errors.New(e)
     }
     if c.Hardware.MatrixHeight < 1 {
-        e := fmt.Sprintf("Hardware.MatrixHeight = %d; must be > 0",
+        return fmt.Errorf("Hardware.MatrixHeight = %d; must be > 0",
             c.Hardware.MatrixHeight)
-        return errors.New(e)
     }
     if !contains(hardwareMappings, c.Hardware.Mapping) {
-        e := fmt.Sprintf("Hardware.Mapping = %s; must be one of: %s",
+        return fmt.Errorf("Hardware.Mapping = %s; must be one of: %s",
             c.Hardware.Mapping, strings.Join(hardwareMappings, ", "))
-        return errors.New(e)
     }
 
     c.loadSchedules(f)
