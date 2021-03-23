@@ -45,6 +45,11 @@ type Env struct {
     config *Config
 }
 
+type Renderer interface {
+    Set(int, int, color.Color)
+    Render() error
+}
+
 func debugLog(fmt string, v ...interface{}) {
     if debug {
         log.Printf(fmt, v...)
@@ -252,21 +257,21 @@ func (e *Env) randomize() {
     }
 }
 
-func (e *Env) update(canvas *rgbmatrix.Canvas) {
+func (e *Env) update(r Renderer) {
     for i, c := range e.tick() {
         x, y := getCoords(i, e.width)
-        canvas.Set(x, y, colorScheme[c])
+        r.Set(x, y, colorScheme[c])
     }
-    canvas.Render()
+    r.Render()
 }
 
-func (e *Env) clear(canvas *rgbmatrix.Canvas) {
+func (e *Env) clear(r Renderer) {
     for x := 0; x < e.width; x++ {
         for y := 0; y < e.height; y++ {
-            canvas.Set(x, y, color.Black)
+            r.Set(x, y, color.Black)
         }
     }
-    canvas.Render()
+    r.Render()
 }
 
 func main() {
