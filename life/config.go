@@ -219,8 +219,7 @@ func (c *Config) GetScheduleState(nd string, nt string, state bool) bool {
     var tm Time
 
     for _, t := range ts {
-        c := now.Compare(t)
-        if c == 0 || c == 1 {
+        if now.Compare(t) > -1 {
             state = t.state
             tm = t
         }
