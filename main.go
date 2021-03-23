@@ -94,13 +94,18 @@ func main() {
     state := true
     toggle := make(chan struct{})
 
+    updateState := func() {
+        t := strings.Fields(time.Now().Format("Mon 15:04"))
+        if s := c.GetScheduleState(t[0], t[1], state); s != state {
+            state = s
+            toggle <- struct{}{}
+        }
+    }
+    updateState()
+
     go func() {
         for range time.Tick(time.Second * 30) {
-            t := strings.Fields(time.Now().Format("Mon 15:04"))
-            if s := c.GetScheduleState(t[0], t[1], state); s != state {
-                state = s
-                toggle <- struct{}{}
-            }
+            updateState()
         }
     }()
 
