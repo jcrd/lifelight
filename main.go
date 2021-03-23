@@ -16,14 +16,6 @@ import (
 
 var configPath = "/etc/lifelight.ini"
 
-func getDebug() bool {
-    _, ok := os.LookupEnv("LIFELIGHT_DEBUG")
-    if ok {
-        log.Println("Debug logging enabled")
-    }
-    return ok
-}
-
 func newCanvas(c *life.Config) *rgbmatrix.Canvas {
     config := rgbmatrix.DefaultConfig
     config.Cols = c.Hardware.MatrixWidth
@@ -65,7 +57,7 @@ regen:
 }
 
 func main() {
-    life.SetDebug(getDebug())
+    life.InitLogger(os.Getenv("LIFELIGHT_DEBUG"))
 
     if v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG"); hasEnv {
         if _, err := os.Stat(v); err != nil {

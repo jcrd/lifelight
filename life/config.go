@@ -150,15 +150,13 @@ sections:
             })
         }
 
-        if debug {
-            log.Printf("config: %s: on %s, off %s (%s)\n",
-                name, times[1], times[0], strings.Join(days, ", "))
-        }
+        logger.log("config", "%s: on %s, off %s (%s)\n",
+            name, times[1], times[0], strings.Join(days, ", "))
     }
 }
 
 func (c *Config) Load(path string) error {
-    debugLog("Loading config file...\n")
+    logger.log("config", "Loading file '%s'...\n", path)
 
     f, err := ini.Load(path)
     if err != nil {
@@ -213,7 +211,7 @@ func (c *Config) GetScheduleState(nd string, nt string, state bool) bool {
         return state
     }
 
-    debugLog("schedule: day = %s, time = %s\n", nd, nt)
+    logger.log("schedule", "day = %s, time = %s\n", nd, nt)
 
     now := toTime(nt, state)
     var tm Time
@@ -225,12 +223,8 @@ func (c *Config) GetScheduleState(nd string, nt string, state bool) bool {
         }
     }
 
-    if debug && state != now.state {
-        b := "off"
-        if state {
-            b = "on"
-        }
-        log.Printf("schedule: %s @ %s\n", b, tm)
+    if state != now.state {
+        logger.log("schedule", "on: %t @ %s\n", state, tm)
     }
 
     return state

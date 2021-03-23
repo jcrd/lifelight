@@ -2,7 +2,6 @@ package life
 
 import (
     "image/color"
-    "log"
     "math/rand"
 )
 
@@ -25,7 +24,13 @@ var colorScheme = ColorScheme{
     color.RGBA{0, 0, 255, 255},
     color.White,
 }
-var debug bool
+
+type Logger interface {
+    init(string)
+    log(string, string, ...interface{})
+}
+
+var logger Logger
 
 type ColorScheme [CELL_N]color.Color
 type Cells []int
@@ -49,14 +54,8 @@ type Renderer interface {
     Render() error
 }
 
-func debugLog(fmt string, v ...interface{}) {
-    if debug {
-        log.Printf(fmt, v...)
-    }
-}
-
-func SetDebug(b bool) {
-    debug = b
+func InitLogger(domains string) {
+    logger.init(domains)
 }
 
 func SetColorScheme(cs ColorScheme) {
@@ -175,7 +174,7 @@ func (e *Env) seedDeadZones() {
 func (e *Env) seed() {
     if e.seedCooldownTicks > 0 {
         e.seedCooldownTicks--
-        debugLog("seed: cooldown = %d\n", e.seedCooldownTicks)
+        logger.log("seed", "cooldown = %d\n", e.seedCooldownTicks)
         return
     }
 
@@ -188,18 +187,18 @@ func (e *Env) seed() {
     c := e.config
 
     if t >= e.seedThreshold || e.seedThreshold < c.SeedThresholdDecay {
-        debugLog("seed: deadzones = %f; seeding...\n", t)
+        logger.log("seed", "deadzones = %f; seeding...\n", t)
         e.seedDeadZones()
         e.seedThreshold = c.SeedThreshold
         e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
         e.seedCooldownTicks = c.SeedCooldownTicks
     } else if e.seedThresholdDecayTicks > 0 {
         e.seedThresholdDecayTicks--
-        debugLog("seed: decay = %d\n", e.seedThresholdDecayTicks)
+        logger.log("seed", "decay = %d\n", e.seedThresholdDecayTicks)
     } else {
         e.seedThreshold -= e.config.SeedThresholdDecay
         e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
-        debugLog("seed: threshold = %f\n", e.seedThreshold)
+        logger.log("seed", "threshold = %f\n", e.seedThreshold)
     }
 }
 
