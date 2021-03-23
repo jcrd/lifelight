@@ -1,4 +1,4 @@
-package main
+package life
 
 import (
     "testing"
@@ -63,7 +63,7 @@ func TestTimeCompare(t *testing.T) {
 func TestConfigLoadSchedules(t *testing.T) {
     f, _ := ini.Load(config1)
 
-    c := newConfig()
+    c := NewConfig()
     c.loadSchedules(f)
 
     weekday := [6]Time{
@@ -115,7 +115,7 @@ func TestConfigLoadSchedules(t *testing.T) {
 func TestConfigGetScheduleState(t *testing.T) {
     f, _ := ini.Load(config1)
 
-    c := newConfig()
+    c := NewConfig()
     c.loadSchedules(f)
 
     daytimes := [...][2]string{
@@ -138,7 +138,7 @@ func TestConfigGetScheduleState(t *testing.T) {
     }
 
     for i, dt := range daytimes {
-        s := c.getScheduleState(dt[0], dt[1], states[i][0])
+        s := c.GetScheduleState(dt[0], dt[1], states[i][0])
         if s != states[i][1] {
             t.Errorf("state = %t; want %t", s, states[i][1])
         }

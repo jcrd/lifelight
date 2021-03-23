@@ -2,11 +2,11 @@ rgbmatrix = rpi-rgb-led-matrix
 LIBDIR = vendor/github.com/jcrd/go-$(rgbmatrix)
 LIB = $(LIBDIR)/lib/$(rgbmatrix)/lib/librgbmatrix.so.1
 
-SRC = main.go config.go
-SRC_TEST = main_test.go config_test.go
+SRC = life/life.go life/config.go
+SRC_TEST = life/life_test.go life/config_test.go
 
-lifelight: $(SRC) $(LIB)
-	go build -o $@ $(SRC)
+lifelight: main.go $(SRC) $(LIB)
+	go build -o $@ $<
 
 $(LIB):
 	$(MAKE) -C $(LIBDIR)
@@ -18,7 +18,7 @@ run-debug: lifelight
 	sudo LIFELIGHT_DEBUG=true ./lifelight
 
 test: $(SRC) $(SRC_TEST)
-	go test
+	cd life && go test
 
 clean:
 	$(MAKE) -C $(LIBDIR) clean

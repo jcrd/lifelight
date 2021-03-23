@@ -1,16 +1,13 @@
-package main
+package life
 
 import (
     "fmt"
     "log"
-    "os"
     "sort"
     "strings"
 
     "github.com/go-ini/ini"
 )
-
-const configPath = "/etc/lifelight.ini"
 
 var hardwareMappings = []string{
     "regular",
@@ -81,7 +78,7 @@ func (t Time) String() string {
     return fmt.Sprintf("%02d:%02d", t.hh, t.mm)
 }
 
-func newConfig() *Config {
+func NewConfig() *Config {
     c := &Config{
         TicksPerSecond: 10,
         SeedThreshold: 0.5,
@@ -160,20 +157,7 @@ sections:
     }
 }
 
-func (c *Config) load() error {
-    path := configPath
-    v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG")
-    if hasEnv {
-        path = v
-    }
-
-    if _, err := os.Stat(path); err != nil {
-        if hasEnv {
-            return err
-        }
-        return nil
-    }
-
+func (c *Config) Load(path string) error {
     debugLog("Loading config file...\n")
 
     f, err := ini.Load(path)
@@ -223,7 +207,7 @@ func (c *Config) load() error {
     return nil
 }
 
-func (c *Config) getScheduleState(nd string, nt string, state bool) bool {
+func (c *Config) GetScheduleState(nd string, nt string, state bool) bool {
     ts, ok := c.schedules[nd]
     if !ok {
         return state
