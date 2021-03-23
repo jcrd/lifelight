@@ -101,9 +101,9 @@ func main() {
             toggle <- struct{}{}
         }
     }
-    updateState()
 
     go func() {
+        updateState()
         for range time.Tick(time.Second * 30) {
             updateState()
         }
