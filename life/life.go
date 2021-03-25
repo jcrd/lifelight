@@ -6,16 +6,16 @@ import (
 )
 
 const (
-    CELL_DEAD int = iota
-    CELL_LIVE_1
-    CELL_LIVE_2
-    CELL_LIVE_3
-    CELL_LIVE_4
+    cellDead int = iota
+    cellLive1
+    cellLive2
+    cellLive3
+    cellLive4
 
-    CELL_N
+    cellN
 )
 
-const LiveCellN = CELL_N - 1
+const LiveCellN = cellN - 1
 
 var colorScheme = ColorScheme{
     color.Black,
@@ -32,7 +32,7 @@ type Logger interface {
 
 var logger Logger
 
-type ColorScheme [CELL_N]color.Color
+type ColorScheme [cellN]color.Color
 type Cells []int
 type Neighbors [8]int
 
@@ -81,10 +81,10 @@ func NewEnv(c *Config) *Env {
 
 func applyRules(c, n int, cs [LiveCellN]int) int {
     if n > 3 || n < 2 {
-        return CELL_DEAD
+        return cellDead
     }
 
-    if c == CELL_DEAD && n == 3 {
+    if c == cellDead && n == 3 {
         for s, i := range cs {
             s += 1
             if i > 1 {
@@ -103,7 +103,7 @@ func randomCell() int {
     if rand.Intn(2) == 1 {
         return rand.Intn(LiveCellN) + 1
     }
-    return CELL_DEAD
+    return cellDead
 }
 
 func getIdx(x, y, width int) int {
@@ -133,7 +133,7 @@ func getNeighbors(idx, width, height int) (ns Neighbors) {
 
 func getContext(cells Cells, ns [8]int) (n int, cs [LiveCellN]int) {
     for _, i := range ns {
-        if c := cells[i]; c != CELL_DEAD {
+        if c := cells[i]; c != cellDead {
             n += 1
             cs[c - 1] += 1
         }
@@ -150,7 +150,7 @@ func (e *Env) updateDeadZones() int {
     e.deadZones = e.deadZones[:0]
 
     for i := range e.buffer {
-        if e.buffer[i] != CELL_DEAD {
+        if e.buffer[i] != cellDead {
             continue
         }
         ns := e.getNeighbors(i)
