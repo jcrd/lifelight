@@ -40,5 +40,6 @@ test: $(SRC) $(SRC_TEST)
 
 clean:
 	$(MAKE) -C $(LIBDIR) clean
+	rm -f lifelight
 
 .PHONY: debug install uninstall run test clean
