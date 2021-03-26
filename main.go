@@ -108,6 +108,9 @@ func main() {
         select {
         case <-toggle:
             e.Clear(canvas)
+            if c.ScheduleColorRegen {
+                genColors(c.FastColorGen)
+            }
             <-toggle
         case <-ticker.C:
             e.Update(canvas)

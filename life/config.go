@@ -35,6 +35,7 @@ type Config struct {
     SeedThresholdDecayTicks int
     SeedCooldownTicks int
     FastColorGen bool
+    ScheduleColorRegen bool
 
     Hardware
 
@@ -86,6 +87,7 @@ func NewConfig() *Config {
         SeedThresholdDecayTicks: 5,
         SeedCooldownTicks: 2,
         FastColorGen: true,
+        ScheduleColorRegen: true,
         Hardware: Hardware{
             MatrixWidth: 32,
             MatrixHeight: 32,
