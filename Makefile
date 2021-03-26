@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 BINPREFIX ?= $(PREFIX)/bin
-ETCPREFIX ?= $(PREFIX)/etc
 LIBPREFIX ?= $(PREFIX)/lib
+ETCPREFIX ?= /etc
 
 rgbmatrix = rpi-rgb-led-matrix
 LIBDIR = vendor/github.com/jcrd/go-$(rgbmatrix)
