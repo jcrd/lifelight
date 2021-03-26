@@ -1,3 +1,8 @@
+PREFIX ?= /usr/local
+BINPREFIX ?= $(PREFIX)/bin
+ETCPREFIX ?= $(PREFIX)/etc
+LIBPREFIX ?= $(PREFIX)/lib
+
 rgbmatrix = rpi-rgb-led-matrix
 LIBDIR = vendor/github.com/jcrd/go-$(rgbmatrix)
 LIB = $(LIBDIR)/lib/$(rgbmatrix)/lib/librgbmatrix.so.1
@@ -14,6 +19,19 @@ debug: main.go $(SRC) $(LIB)
 $(LIB):
 	$(MAKE) -C $(LIBDIR)
 
+install:
+	mkdir -p $(DESTDIR)$(BINPREFIX)
+	cp -p lifelight $(DESTDIR)$(BINPREFIX)
+	mkdir -p $(DESTDIR)$(ETCPREFIX)
+	cp -p lifelight.ini $(DESTDIR)$(ETCPREFIX)
+	mkdir -p $(DESTDIR)$(LIBPREFIX)/systemd/system
+	cp -p systemd/lifelight.service $(DESTDIR)$(LIBPREFIX)/systemd/system
+
+uninstall:
+	rm -f $(DESTDIR)$(BINPREFIX)/lifelight
+	rm -f $(DESTDIR)$(ETCPREFIX)/lifelight.ini
+	rm -f $(DESTDIR)$(LIBPREFIX)/systemd/system/lifelight.service
+
 run: lifelight
 	sudo ./lifelight
 
@@ -23,4 +41,4 @@ test: $(SRC) $(SRC_TEST)
 clean:
 	$(MAKE) -C $(LIBDIR) clean
 
-.PHONY: debug run test clean
+.PHONY: debug install uninstall run test clean
