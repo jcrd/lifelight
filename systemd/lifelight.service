@@ -1,0 +1,9 @@
+[Unit]
+Description=lifelight
+
+[Service]
+ExecStart=/usr/bin/lifelight
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
