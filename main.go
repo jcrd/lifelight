@@ -83,6 +83,9 @@ func main() {
     e.Randomize()
 
     ticks := time.Second / time.Duration(c.TicksPerSecond)
+    ticker := time.NewTicker(ticks)
+    defer ticker.Stop()
+
     state := true
     toggle := make(chan struct{})
 
@@ -101,12 +104,12 @@ func main() {
         }
     }()
 
-    for range time.Tick(ticks) {
+    for {
         select {
         case <-toggle:
             e.Clear(canvas)
             <-toggle
-        default:
+        case <-ticker.C:
             e.Update(canvas)
         }
     }
