@@ -41,6 +41,7 @@ func genColors(ps []string) {
     colors, err := colorPalettes[p](life.LiveCellN)
 
     if err != nil {
+        log.Printf("color: Failed to generate palette '%s': %v\n", p, err)
         colors = colorful.FastHappyPalette(life.LiveCellN)
     }
 
