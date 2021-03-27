@@ -59,16 +59,19 @@ regen:
 func main() {
     life.InitLogger(os.Getenv("LIFELIGHT_DEBUG"))
 
-    if v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG"); hasEnv {
-        if _, err := os.Stat(v); err != nil {
-            log.Printf("config: %v\n", err)
-            return
-        }
+    v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG")
+    if hasEnv {
         configPath = v
     }
 
     c := life.NewConfig()
-    if err := c.Load(configPath); err != nil {
+
+    if _, err := os.Stat(v); err != nil {
+        if hasEnv {
+            log.Printf("config: %v\n", err)
+            return
+        }
+    } else if err := c.Load(configPath); err != nil {
         log.Printf("config: %v\n", err)
         return
     }
