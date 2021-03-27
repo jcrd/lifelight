@@ -22,6 +22,11 @@ type Time struct {
     mm int
 }
 
+type Color struct {
+    FastGen bool
+    ScheduleRegen bool
+}
+
 type Hardware struct {
     MatrixWidth int
     MatrixHeight int
@@ -34,9 +39,8 @@ type Config struct {
     SeedThresholdDecay float32
     SeedThresholdDecayTicks int
     SeedCooldownTicks int
-    FastColorGen bool
-    ScheduleColorRegen bool
 
+    Color
     Hardware
 
     schedules map[string][]Time
@@ -86,8 +90,10 @@ func NewConfig() *Config {
         SeedThresholdDecay: 0.05,
         SeedThresholdDecayTicks: 5,
         SeedCooldownTicks: 2,
-        FastColorGen: true,
-        ScheduleColorRegen: true,
+        Color: Color{
+            FastGen: true,
+            ScheduleRegen: true,
+        },
         Hardware: Hardware{
             MatrixWidth: 32,
             MatrixHeight: 32,

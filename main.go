@@ -80,7 +80,7 @@ func main() {
     defer canvas.Close()
 
     rand.Seed(time.Now().UnixNano())
-    genColors(c.FastColorGen)
+    genColors(c.Color.FastGen)
 
     e := life.NewEnv(c)
     e.Randomize()
@@ -111,8 +111,8 @@ func main() {
         select {
         case <-toggle:
             e.Clear(canvas)
-            if c.ScheduleColorRegen {
-                genColors(c.FastColorGen)
+            if c.Color.ScheduleRegen {
+                genColors(c.Color.FastGen)
             }
             <-toggle
         case <-ticker.C:
