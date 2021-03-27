@@ -16,6 +16,12 @@ import (
 
 var configPath = "/etc/lifelight.ini"
 
+var colorPalettes = map[string]func(int) ([]colorful.Color, error){
+    "happy": colorful.HappyPalette,
+    "soft": colorful.SoftPalette,
+    "warm": colorful.WarmPalette,
+}
+
 func newCanvas(c *life.Config) *rgbmatrix.Canvas {
     config := rgbmatrix.DefaultConfig
     config.Cols = c.Hardware.MatrixWidth
@@ -30,18 +36,11 @@ func newCanvas(c *life.Config) *rgbmatrix.Canvas {
     return rgbmatrix.NewCanvas(matrix)
 }
 
-func genColors(fast bool) {
-    var colors []colorful.Color
+func genColors(ps []string) {
+    p := ps[rand.Intn(len(ps))]
+    colors, err := colorPalettes[p](life.LiveCellN)
 
-regen:
-    if !fast {
-        var err error
-        colors, err = colorful.HappyPalette(life.LiveCellN)
-        if err != nil {
-            fast = true
-            goto regen
-        }
-    } else {
+    if err != nil {
         colors = colorful.FastHappyPalette(life.LiveCellN)
     }
 
@@ -80,7 +79,7 @@ func main() {
     defer canvas.Close()
 
     rand.Seed(time.Now().UnixNano())
-    genColors(c.Color.FastGen)
+    genColors(c.Color.Palettes)
 
     e := life.NewEnv(c)
     e.Randomize()
@@ -112,7 +111,7 @@ func main() {
         case <-toggle:
             e.Clear(canvas)
             if c.Color.ScheduleRegen {
-                genColors(c.Color.FastGen)
+                genColors(c.Color.Palettes)
             }
             <-toggle
         case <-ticker.C:

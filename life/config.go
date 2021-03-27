@@ -9,6 +9,12 @@ import (
     "github.com/go-ini/ini"
 )
 
+var colorPalettes = []string{
+    "happy",
+    "soft",
+    "warm",
+}
+
 var hardwareMappings = []string{
     "regular",
     "adafruit-hat",
@@ -23,7 +29,7 @@ type Time struct {
 }
 
 type Color struct {
-    FastGen bool
+    Palettes []string
     ScheduleRegen bool
 }
 
@@ -91,7 +97,7 @@ func NewConfig() *Config {
         SeedThresholdDecayTicks: 5,
         SeedCooldownTicks: 2,
         Color: Color{
-            FastGen: true,
+            Palettes: colorPalettes,
             ScheduleRegen: true,
         },
         Hardware: Hardware{
@@ -195,6 +201,14 @@ func (c *Config) Load(path string) error {
         return fmt.Errorf("SeedCooldownTicks = %d; must be positive",
             c.SeedCooldownTicks)
     }
+
+    for _, p := range c.Color.Palettes {
+        if !contains(colorPalettes, p) {
+            return fmt.Errorf("Color.Palettes contains %s; must be one of: %s",
+                c.Color.Palettes, strings.Join(colorPalettes, ", "))
+        }
+    }
+
     if c.Hardware.MatrixWidth < 1 {
         return fmt.Errorf("Hardware.MatrixWidth = %d; must be > 0",
             c.Hardware.MatrixWidth)
