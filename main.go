@@ -66,12 +66,7 @@ func main() {
 
     c := life.NewConfig()
 
-    if _, err := os.Stat(v); err != nil {
-        if hasEnv {
-            log.Printf("config: %v\n", err)
-            return
-        }
-    } else if err := c.Load(configPath); err != nil {
+    if err := c.Load(configPath, hasEnv); err != nil {
         log.Printf("config: %v\n", err)
         return
     }

@@ -3,6 +3,7 @@ package life
 import (
     "fmt"
     "log"
+    "os"
     "sort"
     "strings"
 
@@ -169,7 +170,15 @@ sections:
     }
 }
 
-func (c *Config) Load(path string) error {
+func (c *Config) Load(path string, mustExist bool) error {
+    if _, err := os.Stat(path); err != nil {
+        if mustExist {
+            return err
+        } else {
+            return nil
+        }
+    }
+
     logger.log("config", "Loading file '%s'...\n", path)
 
     f, err := ini.Load(path)
