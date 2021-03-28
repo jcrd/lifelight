@@ -57,7 +57,9 @@ func genColors(ps []string) {
 }
 
 func main() {
-    life.InitLogger(os.Getenv("LIFELIGHT_DEBUG"))
+    if v := os.Getenv("LIFELIGHT_DEBUG"); v != "" {
+        life.InitLogger(v)
+    }
 
     v, hasEnv := os.LookupEnv("LIFELIGHT_CONFIG")
     if hasEnv {
