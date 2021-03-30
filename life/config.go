@@ -30,6 +30,7 @@ type Time struct {
 }
 
 type Color struct {
+    Scheme []string
     Palettes []string
     ScheduleRegen bool
 }
@@ -181,7 +182,9 @@ func (c *Config) Load(path string, mustExist bool) error {
 
     logger.log("config", "Loading file '%s'...\n", path)
 
-    f, err := ini.Load(path)
+    f, err := ini.LoadSources(ini.LoadOptions{
+        IgnoreInlineComment: true,
+    }, path)
     if err != nil {
         return err
     }
@@ -209,6 +212,11 @@ func (c *Config) Load(path string, mustExist bool) error {
     if c.SeedCooldownTicks < 0 {
         return fmt.Errorf("SeedCooldownTicks = %d; must be positive",
             c.SeedCooldownTicks)
+    }
+
+    n := len(c.Color.Scheme)
+    if n > 0 && n < 4 {
+        return fmt.Errorf("Color.Scheme length = %d; must be 4", n)
     }
 
     for _, p := range c.Color.Palettes {

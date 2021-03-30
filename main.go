@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "image/color"
     "log"
     "math/rand"
@@ -34,6 +35,22 @@ func newCanvas(c *life.Config) *rgbmatrix.Canvas {
     }
 
     return rgbmatrix.NewCanvas(matrix)
+}
+
+func makeColorScheme(hs []string) (life.ColorScheme, error) {
+    cs := life.ColorScheme{
+        color.Black,
+    }
+
+    for i, h := range hs {
+        c, err := colorful.Hex(h)
+        if err != nil {
+            return cs, fmt.Errorf("%s (%v)", h, err)
+        }
+        cs[i + 1] = c
+    }
+
+    return cs, nil
 }
 
 func genColors(ps []string) {
@@ -73,11 +90,22 @@ func main() {
         return
     }
 
+    rand.Seed(time.Now().UnixNano())
+
+    if len(c.Color.Scheme) > 0 {
+        cs, err := makeColorScheme(c.Color.Scheme)
+        if err != nil {
+            log.Printf("config: Failed to parse color: %v\n", err)
+            return
+        }
+        life.SetColorScheme(cs)
+        c.Color.ScheduleRegen = false
+    } else {
+        genColors(c.Color.Palettes)
+    }
+
     canvas := newCanvas(c)
     defer canvas.Close()
-
-    rand.Seed(time.Now().UnixNano())
-    genColors(c.Color.Palettes)
 
     e := life.NewEnv(c)
     e.Randomize()
