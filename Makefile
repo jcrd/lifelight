@@ -7,7 +7,7 @@ rgbmatrix = rpi-rgb-led-matrix
 LIBDIR = vendor/github.com/jcrd/go-$(rgbmatrix)
 LIB = $(LIBDIR)/lib/$(rgbmatrix)/lib/librgbmatrix.so.1
 
-SRC = life/life.go life/config.go life/log.go life/debug_log.go
+SRC = life/life.go life/config.go life/dummy_log.go life/debug_log.go
 SRC_TEST = life/life_test.go life/config_test.go
 
 lifelight: main.go $(SRC) $(LIB)
