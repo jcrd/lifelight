@@ -93,7 +93,7 @@ func (t Time) String() string {
 
 func NewConfig() *Config {
     c := &Config{
-        TicksPerSecond: 10,
+        TicksPerSecond: 12,
         SeedThreshold: 0.5,
         SeedThresholdDecay: 0.05,
         SeedThresholdDecayTicks: 5,
