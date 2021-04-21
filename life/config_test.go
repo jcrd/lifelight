@@ -35,6 +35,14 @@ Off = 06:00
 Days = Sun
 On = 06:00
 Off = 23:00
+
+[Schedule.off]
+Days = Wed
+Off = 20:00
+
+[Schedule.on]
+Days = Fri
+On = 16:15
 `)
 
 func TestTimeCompare(t *testing.T) {
@@ -66,7 +74,7 @@ func TestConfigLoadSchedules(t *testing.T) {
 	c := NewConfig()
 	c.loadSchedules(f)
 
-	weekday := [6]Time{
+	weekday := []Time{
 		toTime("08:00", true),
 		toTime("08:45", false),
 		toTime("12:00", true),
@@ -74,12 +82,28 @@ func TestConfigLoadSchedules(t *testing.T) {
 		toTime("17:15", true),
 		toTime("23:00", false),
 	}
-	want := map[string][6]Time{
+	want := map[string][]Time{
 		"Mon": weekday,
 		"Tue": weekday,
-		"Wed": weekday,
+		"Wed": {
+			toTime("08:00", true),
+			toTime("08:45", false),
+			toTime("12:00", true),
+			toTime("12:30", false),
+			toTime("17:15", true),
+			toTime("20:00", false),
+			toTime("23:00", false),
+		},
 		"Thu": weekday,
-		"Fri": weekday,
+		"Fri": {
+			toTime("08:00", true),
+			toTime("08:45", false),
+			toTime("12:00", true),
+			toTime("12:30", false),
+			toTime("16:15", true),
+			toTime("17:15", true),
+			toTime("23:00", false),
+		},
 		"Sat": {
 			toTime("02:00", true),
 			toTime("06:00", false),
@@ -106,7 +130,7 @@ func TestConfigLoadSchedules(t *testing.T) {
 		for i, tm := range ts {
 			c := tm.Compare(s[i])
 			if c != 0 {
-				t.Errorf("compare(%s, %s) = %d; want 0", tm, s[i], c)
+				t.Errorf("day: %s, compare(%s, %s) = %d; want 0", d, tm, s[i], c)
 			}
 		}
 	}
@@ -123,6 +147,8 @@ func TestConfigGetScheduleState(t *testing.T) {
 		{"Tue", "13:00"},
 		{"Wed", "17:00"},
 		{"Wed", "17:30"},
+		{"Wed", "21:00"},
+		{"Fri", "16:30"},
 		{"Sat", "07:30"},
 		{"Sat", "12:15"},
 		{"Sun", "23:15"},
@@ -132,6 +158,8 @@ func TestConfigGetScheduleState(t *testing.T) {
 		{false, false},
 		{true, false},
 		{true, true},
+		{true, false},
+		{false, true},
 		{true, false},
 		{false, true},
 		{true, false},

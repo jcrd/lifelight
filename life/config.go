@@ -114,10 +114,10 @@ func NewConfig() *Config {
 }
 
 func (c *Config) loadSchedules(f *ini.File) {
-	var times [2]string
-
 sections:
 	for _, section := range f.ChildSections("Schedule") {
+		var times [2]string
+
 		days := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 		name := section.Name()
 
@@ -134,16 +134,15 @@ sections:
 		}
 
 		for i, n := range [...]string{"Off", "On"} {
-			k, err := section.GetKey(n)
-			if err != nil {
-				log.Printf("config: section '%s': Requires key '%s'\n",
-					name, n)
-				continue sections
+			if k, err := section.GetKey(n); err == nil {
+				times[i] = k.Value()
 			}
-			times[i] = k.Value()
 		}
 
 		for i, str := range times {
+			if str == "" {
+				continue
+			}
 			t, err := parseTime(str)
 			if err != nil {
 				log.Printf("config: section '%s': Invalid time '%s'\n",
