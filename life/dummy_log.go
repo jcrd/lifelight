@@ -12,5 +12,5 @@ func (lg DummyLogger) log(domain, format string, v ...interface{}) {
 }
 
 func init() {
-    logger = DummyLogger{}
+	logger = DummyLogger{}
 }

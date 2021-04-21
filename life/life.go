@@ -1,33 +1,33 @@
 package life
 
 import (
-    "image/color"
-    "math/rand"
+	"image/color"
+	"math/rand"
 )
 
 const (
-    cellDead int = iota
-    cellLive1
-    cellLive2
-    cellLive3
-    cellLive4
+	cellDead int = iota
+	cellLive1
+	cellLive2
+	cellLive3
+	cellLive4
 
-    cellN
+	cellN
 )
 
 const LiveCellN = cellN - 1
 
 var colorScheme = ColorScheme{
-    color.Black,
-    color.RGBA{255, 0, 0, 255},
-    color.RGBA{0, 255, 0, 255},
-    color.RGBA{0, 0, 255, 255},
-    color.White,
+	color.Black,
+	color.RGBA{255, 0, 0, 255},
+	color.RGBA{0, 255, 0, 255},
+	color.RGBA{0, 0, 255, 255},
+	color.White,
 }
 
 type Logger interface {
-    init(string)
-    log(string, string, ...interface{})
+	init(string)
+	log(string, string, ...interface{})
 }
 
 var logger Logger
@@ -37,201 +37,201 @@ type Cells []int
 type Neighbors [8]int
 
 type Env struct {
-    cells Cells
-    buffer Cells
-    deadZones Cells
-    width int
-    height int
-    size int
-    seedThreshold float32
-    seedThresholdDecayTicks int
-    seedCooldownTicks int
-    config *Config
+	cells                   Cells
+	buffer                  Cells
+	deadZones               Cells
+	width                   int
+	height                  int
+	size                    int
+	seedThreshold           float32
+	seedThresholdDecayTicks int
+	seedCooldownTicks       int
+	config                  *Config
 }
 
 type Renderer interface {
-    Set(int, int, color.Color)
-    Render() error
+	Set(int, int, color.Color)
+	Render() error
 }
 
 func InitLogger(domains string) {
-    logger.init(domains)
+	logger.init(domains)
 }
 
 func SetColorScheme(cs ColorScheme) {
-    colorScheme = cs
+	colorScheme = cs
 }
 
 func NewEnv(c *Config) *Env {
-    size := c.Hardware.MatrixWidth * c.Hardware.MatrixHeight
+	size := c.Hardware.MatrixWidth * c.Hardware.MatrixHeight
 
-    return &Env{
-        cells: make(Cells, size),
-        buffer: make(Cells, size),
-        deadZones: make(Cells, 0, size),
-        width: c.Hardware.MatrixWidth,
-        height: c.Hardware.MatrixHeight,
-        size: size,
-        seedThreshold: c.SeedThreshold,
-        seedThresholdDecayTicks: 0,
-        seedCooldownTicks: 0,
-        config: c,
-    }
+	return &Env{
+		cells:                   make(Cells, size),
+		buffer:                  make(Cells, size),
+		deadZones:               make(Cells, 0, size),
+		width:                   c.Hardware.MatrixWidth,
+		height:                  c.Hardware.MatrixHeight,
+		size:                    size,
+		seedThreshold:           c.SeedThreshold,
+		seedThresholdDecayTicks: 0,
+		seedCooldownTicks:       0,
+		config:                  c,
+	}
 }
 
 func applyRules(c, n int, cs [LiveCellN]int) int {
-    if n > 3 || n < 2 {
-        return cellDead
-    }
+	if n > 3 || n < 2 {
+		return cellDead
+	}
 
-    if c == cellDead && n == 3 {
-        for s, i := range cs {
-            s += 1
-            if i > 1 {
-                return s
-            }
-            if i == 0 {
-                c = s
-            }
-        }
-    }
+	if c == cellDead && n == 3 {
+		for s, i := range cs {
+			s += 1
+			if i > 1 {
+				return s
+			}
+			if i == 0 {
+				c = s
+			}
+		}
+	}
 
-    return c
+	return c
 }
 
 func randomCell() int {
-    if rand.Intn(2) == 1 {
-        return rand.Intn(LiveCellN) + 1
-    }
-    return cellDead
+	if rand.Intn(2) == 1 {
+		return rand.Intn(LiveCellN) + 1
+	}
+	return cellDead
 }
 
 func getIdx(x, y, width int) int {
-    return y * width + x
+	return y*width + x
 }
 
 func getCoords(idx, width int) (int, int) {
-    return idx % width, idx / width
+	return idx % width, idx / width
 }
 
 func getNeighbors(idx, width, height int) (ns Neighbors) {
-    x, y := getCoords(idx, width)
-    i := 0
+	x, y := getCoords(idx, width)
+	i := 0
 
-    for _, w := range [...]int{width - 1, 0, 1} {
-        for _, h := range [...]int{height - 1, 0, 1} {
-            if w == 0 && h == 0 {
-                continue
-            }
-            ns[i] = getIdx((x + w) % width, (y + h) % height, width)
-            i++
-        }
-    }
+	for _, w := range [...]int{width - 1, 0, 1} {
+		for _, h := range [...]int{height - 1, 0, 1} {
+			if w == 0 && h == 0 {
+				continue
+			}
+			ns[i] = getIdx((x+w)%width, (y+h)%height, width)
+			i++
+		}
+	}
 
-    return ns
+	return ns
 }
 
 func getContext(cells Cells, ns [8]int) (n int, cs [LiveCellN]int) {
-    for _, i := range ns {
-        if c := cells[i]; c != cellDead {
-            n += 1
-            cs[c - 1] += 1
-        }
-    }
+	for _, i := range ns {
+		if c := cells[i]; c != cellDead {
+			n += 1
+			cs[c-1] += 1
+		}
+	}
 
-    return n, cs
+	return n, cs
 }
 
 func (e *Env) getNeighbors(idx int) Neighbors {
-    return getNeighbors(idx, e.width, e.height)
+	return getNeighbors(idx, e.width, e.height)
 }
 
 func (e *Env) updateDeadZones() int {
-    e.deadZones = e.deadZones[:0]
+	e.deadZones = e.deadZones[:0]
 
-    for i := range e.buffer {
-        if e.buffer[i] != cellDead {
-            continue
-        }
-        ns := e.getNeighbors(i)
-        if n, _ := getContext(e.buffer, ns); n == 0 {
-            e.deadZones = append(e.deadZones, i)
-        }
-    }
+	for i := range e.buffer {
+		if e.buffer[i] != cellDead {
+			continue
+		}
+		ns := e.getNeighbors(i)
+		if n, _ := getContext(e.buffer, ns); n == 0 {
+			e.deadZones = append(e.deadZones, i)
+		}
+	}
 
-    return len(e.deadZones)
+	return len(e.deadZones)
 }
 
 func (e *Env) seedDeadZones() {
-    i := e.deadZones[rand.Intn(len(e.deadZones))]
-    e.buffer[i] = randomCell()
+	i := e.deadZones[rand.Intn(len(e.deadZones))]
+	e.buffer[i] = randomCell()
 
-    for _, n := range e.getNeighbors(i) {
-        e.buffer[n] = randomCell()
-    }
+	for _, n := range e.getNeighbors(i) {
+		e.buffer[n] = randomCell()
+	}
 }
 
 func (e *Env) seed() {
-    if e.seedCooldownTicks > 0 {
-        e.seedCooldownTicks--
-        logger.log("seed", "cooldown = %d\n", e.seedCooldownTicks)
-        return
-    }
+	if e.seedCooldownTicks > 0 {
+		e.seedCooldownTicks--
+		logger.log("seed", "cooldown = %d\n", e.seedCooldownTicks)
+		return
+	}
 
-    z := e.updateDeadZones()
-    if z == 0 {
-        return
-    }
+	z := e.updateDeadZones()
+	if z == 0 {
+		return
+	}
 
-    t := float32(z) / float32(e.size)
-    c := e.config
+	t := float32(z) / float32(e.size)
+	c := e.config
 
-    if t >= e.seedThreshold || e.seedThreshold < c.SeedThresholdDecay {
-        logger.log("seed", "deadzones = %f; seeding...\n", t)
-        e.seedDeadZones()
-        e.seedThreshold = c.SeedThreshold
-        e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
-        e.seedCooldownTicks = c.SeedCooldownTicks
-    } else if e.seedThresholdDecayTicks > 0 {
-        e.seedThresholdDecayTicks--
-        logger.log("seed", "decay = %d\n", e.seedThresholdDecayTicks)
-    } else {
-        e.seedThreshold -= e.config.SeedThresholdDecay
-        e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
-        logger.log("seed", "threshold = %f\n", e.seedThreshold)
-    }
+	if t >= e.seedThreshold || e.seedThreshold < c.SeedThresholdDecay {
+		logger.log("seed", "deadzones = %f; seeding...\n", t)
+		e.seedDeadZones()
+		e.seedThreshold = c.SeedThreshold
+		e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
+		e.seedCooldownTicks = c.SeedCooldownTicks
+	} else if e.seedThresholdDecayTicks > 0 {
+		e.seedThresholdDecayTicks--
+		logger.log("seed", "decay = %d\n", e.seedThresholdDecayTicks)
+	} else {
+		e.seedThreshold -= e.config.SeedThresholdDecay
+		e.seedThresholdDecayTicks = c.SeedThresholdDecayTicks
+		logger.log("seed", "threshold = %f\n", e.seedThreshold)
+	}
 }
 
 func (e *Env) tick() Cells {
-    for i := range e.buffer {
-        n, cs := getContext(e.cells, e.getNeighbors(i))
-        e.buffer[i] = applyRules(e.cells[i], n, cs)
-    }
-    e.seed()
-    copy(e.cells, e.buffer)
+	for i := range e.buffer {
+		n, cs := getContext(e.cells, e.getNeighbors(i))
+		e.buffer[i] = applyRules(e.cells[i], n, cs)
+	}
+	e.seed()
+	copy(e.cells, e.buffer)
 
-    return e.cells
+	return e.cells
 }
 
 func (e *Env) Randomize() {
-    for i := range e.cells {
-        e.cells[i] = randomCell()
-    }
+	for i := range e.cells {
+		e.cells[i] = randomCell()
+	}
 }
 
 func (e *Env) Update(r Renderer) {
-    for i, c := range e.tick() {
-        x, y := getCoords(i, e.width)
-        r.Set(x, y, colorScheme[c])
-    }
-    r.Render()
+	for i, c := range e.tick() {
+		x, y := getCoords(i, e.width)
+		r.Set(x, y, colorScheme[c])
+	}
+	r.Render()
 }
 
 func (e *Env) Clear(r Renderer) {
-    for x := 0; x < e.width; x++ {
-        for y := 0; y < e.height; y++ {
-            r.Set(x, y, color.Black)
-        }
-    }
-    r.Render()
+	for x := 0; x < e.width; x++ {
+		for y := 0; y < e.height; y++ {
+			r.Set(x, y, color.Black)
+		}
+	}
+	r.Render()
 }
