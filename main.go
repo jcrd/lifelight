@@ -130,11 +130,12 @@ func main() {
 
 	state := initialState(c)
 	toggle := make(chan struct{})
+	running := true
 
 	updateState := func() {
 		t := strings.Fields(time.Now().Format("Mon 15:04"))
-		if s := c.GetScheduleState(t[0], t[1], state); s != state {
-			state = s
+		if state = c.GetScheduleState(t[0], t[1], state); running != state {
+			running = state
 			toggle <- struct{}{}
 		}
 	}
