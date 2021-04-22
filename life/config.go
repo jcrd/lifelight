@@ -243,6 +243,11 @@ func (c *Config) Load(path string, mustExist bool) error {
 	return nil
 }
 
+func (c *Config) HasSchedule(d string) bool {
+	_, ok := c.schedules[d]
+	return ok
+}
+
 func (c *Config) GetScheduleState(nd string, nt string, state bool) bool {
 	ts, ok := c.schedules[nd]
 	if !ok {

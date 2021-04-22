@@ -73,6 +73,20 @@ func genColors(ps []string) {
 	life.SetColorScheme(cs)
 }
 
+func initialState(c *life.Config) bool {
+	t := time.Now()
+
+	for i := 1; i < 8; i++ {
+		p := t.AddDate(0, 0, -i)
+		d := p.Format("Mon")
+		if c.HasSchedule(d) {
+			return c.GetScheduleState(d, "23:59", true)
+		}
+	}
+
+	return true
+}
+
 func main() {
 	if v := os.Getenv("LIFELIGHT_DEBUG"); v != "" {
 		life.InitLogger(v)
@@ -114,7 +128,7 @@ func main() {
 	ticker := time.NewTicker(ticks)
 	defer ticker.Stop()
 
-	state := true
+	state := initialState(c)
 	toggle := make(chan struct{})
 
 	updateState := func() {
