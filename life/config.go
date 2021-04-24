@@ -47,6 +47,7 @@ type Config struct {
 	SeedThresholdDecay      float32
 	SeedThresholdDecayTicks int
 	SeedCooldownTicks       int
+	Schedule                bool
 
 	Color
 	Hardware
@@ -98,6 +99,7 @@ func NewConfig() *Config {
 		SeedThresholdDecay:      0.05,
 		SeedThresholdDecayTicks: 5,
 		SeedCooldownTicks:       2,
+		Schedule:                true,
 		Color: Color{
 			Palettes:      colorPalettes,
 			ScheduleRegen: true,
@@ -246,6 +248,10 @@ func (c *Config) Load(path string, mustExist bool) error {
 func (c *Config) HasSchedule(d string) bool {
 	_, ok := c.schedules[d]
 	return ok
+}
+
+func (c *Config) NumSchedules() int {
+	return len(c.schedules)
 }
 
 func (c *Config) GetScheduleState(nd string, nt string, state bool) bool {

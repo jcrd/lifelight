@@ -87,6 +87,25 @@ func initialState(c *life.Config) bool {
 	return true
 }
 
+func updateScheduleState(c *life.Config, toggle chan<- struct{}) {
+	running := true
+	state := initialState(c)
+
+	update := func() {
+		t := strings.Fields(time.Now().Format("Mon 15:04"))
+		if state = c.GetScheduleState(t[0], t[1], state); running != state {
+			running = state
+			toggle <- struct{}{}
+		}
+	}
+
+	update()
+
+	for range time.Tick(time.Second * 30) {
+		update()
+	}
+}
+
 func main() {
 	if v := os.Getenv("LIFELIGHT_DEBUG"); v != "" {
 		life.InitLogger(v)
@@ -128,24 +147,11 @@ func main() {
 	ticker := time.NewTicker(ticks)
 	defer ticker.Stop()
 
-	state := initialState(c)
 	toggle := make(chan struct{})
-	running := true
 
-	updateState := func() {
-		t := strings.Fields(time.Now().Format("Mon 15:04"))
-		if state = c.GetScheduleState(t[0], t[1], state); running != state {
-			running = state
-			toggle <- struct{}{}
-		}
+	if c.Schedule && c.NumSchedules() > 0 {
+		go updateScheduleState(c, toggle)
 	}
-
-	go func() {
-		updateState()
-		for range time.Tick(time.Second * 30) {
-			updateState()
-		}
-	}()
 
 	for {
 		select {
