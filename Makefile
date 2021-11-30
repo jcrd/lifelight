@@ -16,6 +16,9 @@ lifelight: main.go $(SRC) $(LIB)
 debug: main.go $(SRC) $(LIB)
 	go build -tags debug -o lifelight $<
 
+static: main.go $(SRC) $(LIB)
+	go build -a -ldflags="-extldflags=-static" -o lifelight $<
+
 $(LIB):
 	$(MAKE) -C $(LIBDIR)
 
@@ -42,4 +45,4 @@ clean:
 	$(MAKE) -C $(LIBDIR) clean
 	rm -f lifelight
 
-.PHONY: debug install uninstall run test clean
+.PHONY: debug static install uninstall run test clean
