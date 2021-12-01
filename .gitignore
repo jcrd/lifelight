@@ -1,2 +1,5 @@
 lifelight
 build.log
+
+deb/*
+!deb/DEBIAN

@@ -51,4 +51,8 @@ clean:
 	$(MAKE) -C $(LIBDIR) clean
 	rm -f lifelight
 
-.PHONY: debug static install uninstall run test clean
+deb:
+	DESTDIR=deb PREFIX=/usr $(MAKE) install
+	dpkg-deb -b deb lifelight-$(VERSION)_armel.deb
+
+.PHONY: debug static install uninstall run test clean deb

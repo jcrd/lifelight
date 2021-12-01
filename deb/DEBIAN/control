@@ -1,0 +1,8 @@
+Package: lifelight
+Version: 0.0.0
+Section: custom
+Priority: optional
+Architecture: armel
+Essential: no
+Maintainer: james@twiddlingbits.net
+Description: Game of Life for Raspberry Pi with LED matrix
