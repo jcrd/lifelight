@@ -15,6 +15,8 @@ import (
 	"github.com/lucasb-eyer/go-colorful"
 )
 
+var version = ""
+
 var configPath = "/etc/lifelight.ini"
 
 var colorPalettes = map[string]func(int) ([]colorful.Color, error){
@@ -148,6 +150,8 @@ func main() {
 	defer ticker.Stop()
 
 	toggle := make(chan struct{})
+
+	fmt.Println("running:", version)
 
 	if c.Schedule && c.NumSchedules() > 0 {
 		go updateScheduleState(c, toggle)

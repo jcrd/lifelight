@@ -1,3 +1,6 @@
+VERSIONCMD = git describe --dirty --tags --always 2> /dev/null
+VERSION := $(shell $(VERSIONCMD) || cat VERSION)
+
 PREFIX ?= /usr/local
 BINPREFIX ?= $(PREFIX)/bin
 LIBPREFIX ?= $(PREFIX)/lib
@@ -11,13 +14,16 @@ SRC = life/life.go life/config.go life/dummy_log.go life/debug_log.go
 SRC_TEST = life/life_test.go life/config_test.go
 
 lifelight: main.go $(SRC) $(LIB)
-	go build -o lifelight $<
+	go build -ldflags="-X 'main.version=$(VERSION)'" \
+		-o lifelight $<
 
 debug: main.go $(SRC) $(LIB)
-	go build -tags debug -o lifelight $<
+	go build -tags debug -ldflags="-X 'main.version=$(VERSION)'" \
+		-o lifelight $<
 
 static: main.go $(SRC) $(LIB)
-	go build -a -ldflags="-extldflags=-static" -o lifelight $<
+	go build -a -ldflags="-extldflags=-static -X 'main.version=$(VERSION)'" \
+		-o lifelight $<
 
 $(LIB):
 	$(MAKE) -C $(LIBDIR)
